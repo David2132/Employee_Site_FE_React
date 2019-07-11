@@ -2,6 +2,9 @@ import React from 'react';
 import { Table } from 'reactstrap';
 import { Button } from 'reactstrap';
 import DataService from '../service/DataService';
+import { withRouter } from 'react-router-dom'
+import Employee from './employeelist'
+
 
 class Form extends React.Component {
     constructor(props) {
@@ -17,10 +20,12 @@ class Form extends React.Component {
             cellError: '',
             zipError: '',
             emailError: '',
-            validated: false
+            validated: false,
+            redirect:false,
         }
         this.handleChange = this.handleChange.bind(this)
         this.save = this.save.bind(this)
+        this.cancel = this.cancel.bind(this)
     }
 
     handleChange(event) {
@@ -42,10 +47,17 @@ class Form extends React.Component {
         let homeError = "";
         let cellError = "";
 
+        var emailReg = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        var cityReg = /^[a-zA-Z]+(?:[\s-][a-zA-Z]+)*$/
+        var nameReg = /^([A-Za-z]*)$/
+        var addressReg = /[A-Za-z0-9'\.\-\s\,]/
+        var zipReg = /^(0|[1-9][0-9]*)$/
+        var phoneReg = /^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/
+
         if (!this.state.employee.email) {
             emailError = "Email is required "
         }
-        else if (!this.state.employee.email.includes("@")) {
+        else if (!emailReg.test(this.state.employee.email)) {
             emailError = "Not a valid email "
         }
         else if (this.state.employee.email.length < 10) {
@@ -54,9 +66,12 @@ class Form extends React.Component {
         else if (this.state.employee.email.length > 50) {
             emailError = "Email has to be maximum 35 character "
         }
-        
+
         if (!this.state.employee.first_NAME) {
             firstError = "First name is required"
+        }
+        else if (!nameReg.test((this.state.employee.first_NAME).toLowerCase())) {
+            firstError = 'Not a valid first name'
         }
         else if (this.state.employee.first_NAME.length > 35) {
             firstError = "First name must be maximum 35 character "
@@ -64,9 +79,12 @@ class Form extends React.Component {
         else if (this.state.employee.first_NAME.length < 2) {
             firstError = "First name must be minimum 2 character "
         }
-        
+
         if (!this.state.employee.last_NAME) {
             lastError = "Last name is required"
+        }
+        else if (!nameReg.test(this.state.employee.last_NAME)) {
+            lastError = 'Not a valid last name'
         }
         else if (this.state.employee.last_NAME.length > 35) {
             lastError = "Last name must be maximum 35 character "
@@ -74,19 +92,26 @@ class Form extends React.Component {
         else if (this.state.employee.last_NAME.length < 2) {
             lastError = "Last name must be minimum 2 character "
         }
-        
+
         if (!this.state.employee.address) {
             addressError = "Address is required"
         }
+        else if (!addressReg.test(this.state.employee.address)) {
+            addressError = 'Not a valid address'
+        }
+
         else if (this.state.employee.address.length > 35) {
             addressError = "Address must be maximum 35 character "
         }
         else if (this.state.employee.address.length < 8) {
             addressError = "Address must be minimum 8 character "
         }
-        
+
         if (!this.state.employee.city) {
             cityError = "City is required"
+        }
+        else if (!cityReg.test(this.state.employee.city)) {
+            cityError = 'Not a valid city'
         }
         else if (this.state.employee.city.length > 50) {
             cityError = "City must be maximum 50 character "
@@ -94,9 +119,12 @@ class Form extends React.Component {
         else if (this.state.employee.city.length < 5) {
             cityError = "City must be minimum 5 character "
         }
-        
+
         if (!this.state.employee.zip) {
             zipError = "Zip is required"
+        }
+        else if (!zipReg.test(this.state.employee.zip)) {
+            zipError = 'Not a valid zip'
         }
         else if (this.state.employee.zip.length > 9) {
             zipError = "Zip must be maximum 50 character "
@@ -104,19 +132,25 @@ class Form extends React.Component {
         else if (this.state.employee.zip.length < 5) {
             zipError = "Zip must be minimum 5 character "
         }
-        
+
         if (!this.state.employee.home_PHONE) {
             homeError = "Home phone is required"
         }
-        else if (this.state.employee.home_PHONE.length !== 10) {
-            homeError = "Not a valid home phone number"
+        else if (!phoneReg.test(this.state.employee.home_PHONE)) {
+            homeError = "Home phone number is not valid"
         }
-        
+        else if (this.state.employee.home_PHONE.length !== 10) {
+            homeError = "Phone number is not long enough"
+        }
+
         if (!this.state.employee.cell_PHONE) {
             cellError = "Cell phone is required"
         }
+        else if (!phoneReg.test(this.state.employee.cell_PHONE)) {
+            cellError = "Cell phone number is not valid"
+        }
         else if (this.state.employee.cell_PHONE.length !== 10) {
-            cellError = "Not a valid cell phone number"
+            cellError = "Phone number not long enough"
         }
         let validated = false
         if (!emailError &&
@@ -146,23 +180,31 @@ class Form extends React.Component {
         this.validator();
         if (this.props.status.newEmp && this.state.validated) {
             DataService.addEmployee(this.state.employee)
-            window.location.href = "/employees";
-
+            this.setState({
+                ...this.state,
+                redirect:true
+            })
         }
         else if (this.state.validated) {
             DataService.updateEmployee(this.state.employee)
-            window.location.href = '/employees'
+            this.setState({
+                ...this.state,
+                redirect:true
+            })
         }
+    }
+    cancel(){
+        this.setState({...this.state,redirect:true})
     }
 
     render() {
-        
+
         const style = {
             textAlign: 'center'
         }
         const style1 = {
             marginLeft: '35%',
-            width: '30%',
+            width: '387pt',
             border: '2px solid black'
 
         }
@@ -174,9 +216,10 @@ class Form extends React.Component {
             page = 'Add'
         else
             page = 'Edit'
-
-
+        if (this.state.redirect)
+            return <Employee/>
         return (<div >
+
             <Table striped bordered style={style1}>
                 <thead>
                     <tr>
@@ -199,9 +242,9 @@ class Form extends React.Component {
                                 onChange={this.handleChange}>
                             </input>
                             <br></br>
-                                <b style ={{color:'red'}}>
-                                    {this.state.firstError}
-                                </b>
+                            <b style={{ color: 'red' }}>
+                                {this.state.firstError}
+                            </b>
                         </td>
                     </tr>
                     <tr>
@@ -216,9 +259,9 @@ class Form extends React.Component {
                                 onChange={this.handleChange}>
                             </input>
                             <br></br>
-                                <b style ={{color:'red'}}>
-                                    {this.state.lastError}
-                                </b>
+                            <b style={{ color: 'red' }}>
+                                {this.state.lastError}
+                            </b>
 
                         </td>
                     </tr>
@@ -235,9 +278,9 @@ class Form extends React.Component {
                             >
                             </input>
                             <br></br>
-                                <b style ={{color:'red'}}>
-                                    {this.state.addressError}
-                                </b>
+                            <b style={{ color: 'red' }}>
+                                {this.state.addressError}
+                            </b>
                         </td>
                     </tr>
                     <tr>
@@ -252,9 +295,9 @@ class Form extends React.Component {
                                 onChange={this.handleChange}>
                             </input>
                             <br></br>
-                                <b style ={{color:'red'}}>
-                                    {this.state.cityError}
-                                </b>
+                            <b style={{ color: 'red' }}>
+                                {this.state.cityError}
+                            </b>
                         </td>
                     </tr>
                     <tr>
@@ -333,9 +376,9 @@ class Form extends React.Component {
                                 onChange={this.handleChange}>
                             </input>
                             <br></br>
-                                <b style ={{color:'red'}}>
-                                    {this.state.zipError}
-                                </b>
+                            <b style={{ color: 'red' }}>
+                                {this.state.zipError}
+                            </b>
                         </td>
                     </tr>
                     <tr>
@@ -350,9 +393,9 @@ class Form extends React.Component {
                                 onChange={this.handleChange}>
                             </input>
                             <br></br>
-                                <b style ={{color:'red'}}>
-                                    {this.state.homeError}
-                                </b>
+                            <b style={{ color: 'red' }}>
+                                {this.state.homeError}
+                            </b>
                         </td>
                     </tr>
                     <tr>
@@ -367,9 +410,9 @@ class Form extends React.Component {
                                 onChange={this.handleChange}>
                             </input>
                             <br></br>
-                                <b style ={{color:'red'}}>
-                                    {this.state.cellError}
-                                </b>
+                            <b style={{ color: 'red' }}>
+                                {this.state.cellError}
+                            </b>
                         </td>
                     </tr>
                     <tr>
@@ -384,16 +427,16 @@ class Form extends React.Component {
                                 onChange={this.handleChange}>
                             </input>
                             <br></br>
-                                <b style ={{color:'red'}}>
-                                    {this.state.emailError}
-                                </b>
+                            <b style={{ color: 'red' }}>
+                                {this.state.emailError}
+                            </b>
                         </td>
                     </tr>
                     <tr>
                         <td colSpan='2' style={style2}>
-                            < a href="/employees">
-                                <Button>Cancel</Button>
-                            </a>
+
+                            <Button onClick={this.cancel}>Cancel</Button>
+
                             <Button style={{ marginLeft: "5pt" }} onClick={this.save}>Submit</Button>
                         </td>
 
@@ -404,4 +447,4 @@ class Form extends React.Component {
         </div>)
     }
 }
-export default Form
+export default withRouter(Form)
