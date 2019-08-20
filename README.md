@@ -12,6 +12,9 @@ Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 The page will reload if you make edits.<br>
 You will also see any lint errors in the console.
 
+### Example Pictures
+The application will not work correctly due to the MySql database not being ran. The 'Example Pictures' folder will show you how the application works and looks. 
+
 ### `npm test`
 
 Launches the test runner in the interactive watch mode.<br>
